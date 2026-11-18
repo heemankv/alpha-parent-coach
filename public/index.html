@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="A calm, practical parenting check-in from Alpha Kids.">
+  <title>Parent Coach · Alpha Kids</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="https://www.alpha.kids/" aria-label="Alpha Kids home">Alpha Kids<span class="brand-dot">.</span></a>
+    <span class="header-label">Parent coach <span class="preview">PREVIEW</span></span>
+  </header>
+
+  <main class="layout">
+    <aside class="intro">
+      <div class="eyebrow"><span class="sparkle">✳</span> A little help for the big moments</div>
+      <h1>Parenting is a<br><em>work in progress.</em></h1>
+      <p>Tell us what’s on your mind. Get one small plan you can try today, then a simple way to check in.</p>
+      <div class="language-pill">English <span>·</span> اردو <span>·</span> Roman Urdu</div>
+      <div class="intro-bottom">
+        <div class="mini-art" aria-hidden="true"><span class="circle one"></span><span class="circle two"></span><span class="circle three"></span><span class="star">✳</span></div>
+        <p>Small steps can make room for big growth.</p>
+      </div>
+    </aside>
+
+    <section class="coach" aria-label="Parent coach conversation">
+      <div class="coach-header"><div class="coach-avatar">✳</div><div><strong>Alpha coach</strong><span>Here with you, one step at a time</span></div><div class="status"><span></span> Ready to listen</div></div>
+      <div id="conversation" class="conversation" role="log" aria-live="polite">
+        <div class="welcome">
+          <div class="welcome-icon">✳</div>
+          <h2>What’s going on?</h2>
+          <p>Share a parenting concern in English or Urdu. No names or personal details needed.</p>
+          <div class="suggestions"><button type="button" data-prompt="My child gets upset when it's time to stop screen time.">Screen time struggles <span>↗</span></button><button type="button" data-prompt="میرا بچہ اسکول جانے سے گھبراتا ہے۔">اسکول کی پریشانی <span>↗</span></button></div>
+        </div>
+      </div>
+      <div class="composer-wrap">
+        <form id="form" class="composer">
+          <label for="message" class="sr-only">Your parenting concern</label>
+          <textarea id="message" rows="2" maxlength="2000" placeholder="Tell me what’s happening... / کیا ہو رہا ہے؟" required></textarea>
+          <button id="send" type="submit" aria-label="Send message">↗</button>
+        </form>
+        <div class="composer-footer"><span>Thoughtful guidance, not a diagnosis.</span><button type="button" id="clear">Start over</button></div>
+      </div>
+    </section>
+  </main>
+  <footer>Alpha Kids · Raise unstoppable children <span>For immediate danger, contact local emergency services.</span></footer>
+</body>
+</html>

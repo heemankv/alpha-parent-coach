@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { server, urgentConcern, urgentReply } from '../server.js';
 
 test('explicit safety concerns escalate in English and Urdu', () => {
-  for (const text of ['My child wants to die', 'Someone abused my daughter', 'My son cannot breathe', 'میرا بچہ خودکشی کی بات کرتا ہے', 'میرا بچہ بے ہوش ہے']) {
+  for (const text of ['My child wants to die', 'Someone abused my daughter', 'My son cannot breathe', 'My child is choking', 'This is an emergency', 'Someone hits my child', 'میرا بچہ خودکشی کی بات کرتا ہے', 'میرا بچہ بے ہوش ہے']) {
     assert.equal(urgentConcern(text), true, text);
     assert.equal(urgentReply(text).urgent, true);
   }

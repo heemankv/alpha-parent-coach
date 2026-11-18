@@ -6,6 +6,7 @@ const root = fileURLToPath(new URL('.', import.meta.url));
 const port = Number(process.env.PORT || 3000);
 const key = process.env.OPENAI_API_KEY;
 const model = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
+const localModel = process.env.OLLAMA_MODEL || 'gemma3:4b';
 
 export function urgentConcern(text) {
   return /\b(suicid(?:e|al)|self[- ]?harm|(?:want|wants|wanted) to die|kill (?:myself|himself|herself|themselves)|hurt (?:myself|himself|herself|themselves)|cutting (?:myself|himself|herself|themselves)|overdos(?:e|ed)|unconscious|not breathing|can't breathe|cannot breathe|choking|seizure|severe bleeding|poisoned|emergency|immediate danger|abus(?:e|ed|ing)|molest(?:ed|ation)|sexual assault|domestic violence|(?:hit|hits|hitting|beat|beating) (?:my|the|our) child)\b|خودکشی|خود کو نقصان|جان سے مار|سانس نہیں|بے ہوش|زیادتی|جنسی تشدد|بدسلوکی|تشدد|ایمرجنسی|حادثہ|maar dunga|khudkushi|khud ko nuqsan|saans nahi|behosh/i.test(text);
@@ -32,25 +33,25 @@ function validReply(value) {
 }
 
 async function coach(message, history) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const local = !key;
+  const language = /[\u0600-\u06ff]/.test(message) ? 'Write title, every step, and checkIn entirely in Urdu script. Do not use English.' : isUrdu(message) ? 'Write title, every step, and checkIn in Roman Urdu.' : 'Write title, every step, and checkIn in English.';
+  const response = await fetch(local ? 'http://127.0.0.1:11434/api/chat' : 'https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(20000),
+    headers: local ? { 'Content-Type': 'application/json' } : { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(local ? 120000 : 20000),
     body: JSON.stringify({
-      model,
-      temperature: 0.4,
-      max_completion_tokens: 300,
-      response_format: { type: 'json_object' },
+      ...(local ? { model: localModel, stream: false, think: false, format: 'json', options: { temperature: 0.4, num_predict: 300 } } : { model, temperature: 0.4, max_completion_tokens: 300, response_format: { type: 'json_object' } }),
       messages: [
         { role: 'system', content: instructions },
         ...history.map(item => ({ role: item.role, content: item.content })),
+        { role: 'system', content: language },
         { role: 'user', content: message }
       ]
     })
   });
   if (!response.ok) throw new Error(`Model request failed (${response.status})`);
   const data = await response.json();
-  const result = JSON.parse(data.choices?.[0]?.message?.content || 'null');
+  const result = JSON.parse((local ? data.message?.content : data.choices?.[0]?.message?.content) || 'null');
   if (!validReply(result)) throw new Error('Invalid model response');
   return result.urgent ? urgentReply(message) : result;
 }
@@ -76,10 +77,9 @@ export const server = createServer(async (request, response) => {
         return send(400, { error: 'Please enter a concern under 2,000 characters.' });
       }
       if (urgentConcern(message)) return send(200, urgentReply(message));
-      if (!key) return send(503, { error: 'The coach is not configured yet. Set OPENAI_API_KEY on the server.' });
       return send(200, await coach(message.trim(), history));
     } catch (error) {
-      return send(error.message === 'Request too large' ? 413 : 502, { error: error.message === 'Request too large' ? error.message : 'The coach could not respond. Please try again.' });
+      return send(error.message === 'Request too large' ? 413 : 502, { error: error.message === 'Request too large' ? error.message : key ? 'The coach could not respond. Please try again.' : `Local coach unavailable. Start Ollama and pull ${localModel}, then try again.` });
     }
   }
   if (request.method !== 'GET') return send(405, { error: 'Method not allowed' });

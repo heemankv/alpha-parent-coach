@@ -3,10 +3,22 @@ const input = document.querySelector('#message');
 const send = document.querySelector('#send');
 const conversation = document.querySelector('#conversation');
 const clear = document.querySelector('#clear');
+const startChat = document.querySelector('#start-chat');
+const backHome = document.querySelector('#back-home');
 const welcome = conversation.innerHTML;
 let history = [];
 let requestId = 0;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+startChat.addEventListener('click', () => {
+  document.body.classList.add('chat-open');
+  backHome.focus();
+});
+
+backHome.addEventListener('click', () => {
+  document.body.classList.remove('chat-open');
+  startChat.focus();
+});
 
 function scrollToLatest(focusRow) {
   requestAnimationFrame(() => {

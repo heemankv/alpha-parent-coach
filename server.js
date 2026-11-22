@@ -18,8 +18,8 @@ function isUrdu(text) {
 
 export function urgentReply(text) {
   return isUrdu(text)
-    ? { urgent: true, title: 'ابھی حفاظت کو ترجیح دیں', steps: ['بچے کو محفوظ جگہ پر لے جائیں اور اس کے ساتھ رہیں۔', 'فوری خطرے میں اپنی مقامی ایمرجنسی سروس سے رابطہ کریں۔ زیادتی یا تشدد کے معاملے میں مقامی تحفظِ اطفال کی خدمت سے رابطہ کریں۔'], checkIn: 'کیا آپ اور بچہ اس وقت محفوظ ہیں؟' }
-    : { urgent: true, title: 'Put safety first right now', steps: ['Move your child to a safe place and stay with them.', 'If there is immediate danger, contact local emergency services. For abuse or violence, contact local child protection services.'], checkIn: 'Are you and your child safe right now?' };
+    ? { urgent: true, title: 'ابھی حفاظت کو ترجیح دیں', steps: ['میں چیٹ میں اس بحران کے بارے میں محفوظ رہنمائی نہیں دے سکتا۔ بچے کے ساتھ رہیں اور اسے محفوظ جگہ پر لے جائیں۔', 'فوری خطرے میں اپنی مقامی ایمرجنسی سروس سے رابطہ کریں۔ زیادتی یا تشدد کے معاملے میں مقامی تحفظِ اطفال کی خدمت سے رابطہ کریں۔'], checkIn: 'کیا آپ اور بچہ اس وقت محفوظ ہیں؟' }
+    : { urgent: true, title: 'Put safety first right now', steps: ["I can't safely coach a crisis in chat. Stay with your child and move to a safe place.", 'If there is immediate danger, contact local emergency services. For abuse or violence, contact local child protection services.'], checkIn: 'Are you and your child safe right now?' };
 }
 
 const instructions = `You are Alpha Kids, a calm parenting coach. Reply in the parent's language: English, Urdu script, or Roman Urdu. Keep it brief, warm, and practical. Never diagnose, label a child, prescribe treatment, or give medical or legal instructions. No unsupported claims about scientific evidence. Ask for no identifying details.

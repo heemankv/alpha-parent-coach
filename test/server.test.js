@@ -20,6 +20,7 @@ test('API validates input and escalates without a model key', async () => {
     assert.equal(urgent.status, 200);
     const reply = await urgent.json();
     assert.equal(reply.urgent, true);
+    assert.match(reply.steps[0], /can't safely coach a crisis/i);
     assert.match(reply.checkIn, /safe/i);
   } finally {
     server.close();

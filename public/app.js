@@ -3,6 +3,7 @@ const input = document.querySelector('#message');
 const send = document.querySelector('#send');
 const conversation = document.querySelector('#conversation');
 const clear = document.querySelector('#clear');
+const welcome = conversation.innerHTML;
 let history = [];
 
 function element(tag, className, text) {
@@ -88,14 +89,16 @@ input.addEventListener('keydown', event => {
   }
 });
 
-document.querySelectorAll('[data-prompt]').forEach(button => button.addEventListener('click', () => {
+conversation.addEventListener('click', event => {
+  const button = event.target.closest('[data-prompt]');
+  if (!button) return;
   input.value = button.dataset.prompt;
   input.focus();
-}));
+});
 
 clear.addEventListener('click', () => {
   history = [];
-  conversation.innerHTML = '<div class="welcome"><div class="welcome-icon">✳</div><h2>What’s going on?</h2><p>Share a parenting concern in English or Urdu. No names or personal details needed.</p></div>';
+  conversation.innerHTML = welcome;
   input.value = '';
   input.focus();
 });

@@ -28,3 +28,4 @@
   .intro-bottom,.welcome-icon{display:none}
   .welcome p{font-size:12px}
 }
+.composer textarea{min-height:44px}

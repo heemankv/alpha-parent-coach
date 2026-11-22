@@ -23,7 +23,12 @@ function addUser(text) {
 
 function addCoach(reply) {
   const row = element('div', `message-row coach-row${reply.urgent ? ' urgent' : ''}`);
-  const avatar = element('div', 'reply-avatar', reply.urgent ? '!' : '✳');
+  const avatar = element('div', 'reply-avatar');
+  avatar.setAttribute('aria-hidden', 'true');
+  const photo = element('img');
+  photo.src = '/coach-avatar.jpg';
+  photo.alt = '';
+  avatar.append(photo);
   const card = element('div', 'reply-card');
   const label = element('div', 'reply-label', reply.urgent ? 'SAFETY FIRST' : 'A SMALL PLAN');
   const title = element('h3', '', reply.title);
@@ -34,8 +39,10 @@ function addCoach(reply) {
     item.dir = 'auto';
     list.append(item);
   }
-  const check = element('div', 'check-in');
-  check.append(element('span', 'check-icon', '↗'), element('div', '', reply.checkIn));
+  const check = element('button', 'check-in');
+  check.type = 'button';
+  check.dataset.prompt = /[\u0600-\u06ff]/.test(reply.checkIn) ? 'تازہ صورتحال: ' : 'Here’s what happened: ';
+  check.append(element('span', 'check-icon', '↗'), element('span', '', reply.checkIn));
   check.dir = 'auto';
   card.append(label, title, list, check);
   row.append(avatar, card);

@@ -40,3 +40,10 @@
 @keyframes status-breathe{50%{box-shadow:0 0 0 3px rgba(81,183,135,.16)}}
 @keyframes status-pulse{0%{opacity:.7;transform:scale(.65)}70%,100%{opacity:0;transform:scale(1.5)}}
 @media (prefers-reduced-motion:reduce){.status span,.status span::after{animation:none}}
+.reply-avatar{position:sticky;top:12px;width:34px;height:34px;padding:2px;overflow:hidden;border:1px solid #f5c3ca;border-radius:50%;background:#fff}
+.reply-avatar img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:center 38%}
+.reply-card{max-width:calc(100% - 43px)}
+.urgent .reply-avatar{background:#fff;border-color:var(--red)}
+.check-in{width:100%;border-right:0;border-bottom:0;border-left:0;background:transparent;text-align:left;cursor:pointer;font-family:inherit}
+.check-in:hover{color:var(--red)}
+.check-in:focus-visible{outline:2px solid var(--red);outline-offset:4px;border-radius:3px}

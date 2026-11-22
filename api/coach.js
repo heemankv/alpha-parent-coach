@@ -11,6 +11,6 @@ export async function POST(request) {
   } catch {
     return Response.json({ error: 'Invalid JSON request.' }, { status: 400 });
   }
-  const { status, payload } = await answer(body);
+  const { status, payload } = await answer(body, request.headers.get('x-vercel-ip-country'));
   return Response.json(payload, { status, headers: { 'Cache-Control': 'no-store' } });
 }

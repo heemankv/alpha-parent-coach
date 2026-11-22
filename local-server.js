@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { crisisContacts } from './crisis-contacts.js';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const port = Number(process.env.PORT || 3000);
@@ -18,10 +19,11 @@ function isUrdu(text) {
   return /[\u0600-\u06ff]/.test(text) || /\b(kya|mera|meri|bacha|bachay|bachi|nahi|khudkushi)\b/i.test(text);
 }
 
-export function urgentReply(text) {
-  return isUrdu(text)
+export function urgentReply(text, countryCode) {
+  const reply = isUrdu(text)
     ? { urgent: true, title: 'ابھی حفاظت کو ترجیح دیں', steps: ['میں چیٹ میں اس بحران کے بارے میں محفوظ رہنمائی نہیں دے سکتا۔ بچے کے ساتھ رہیں اور اسے محفوظ جگہ پر لے جائیں۔', 'فوری خطرے میں اپنی مقامی ایمرجنسی سروس سے رابطہ کریں۔ زیادتی یا تشدد کے معاملے میں مقامی تحفظِ اطفال کی خدمت سے رابطہ کریں۔'], checkIn: 'کیا آپ اور بچہ اس وقت محفوظ ہیں؟' }
     : { urgent: true, title: 'Put safety first right now', steps: ["I can't safely coach a crisis in chat. Stay with your child and move to a safe place.", 'If there is immediate danger, contact local emergency services. For abuse or violence, contact local child protection services.'], checkIn: 'Are you and your child safe right now?' };
+  return { ...reply, contacts: crisisContacts(countryCode) };
 }
 
 const instructions = `You are Alpha Kids, a calm parenting coach. Reply in the parent's language: English, Urdu script, or Roman Urdu. Keep it brief, warm, and practical. Never diagnose, label a child, prescribe treatment, or give medical or legal instructions. No unsupported claims about scientific evidence. Ask for no identifying details.
@@ -34,7 +36,7 @@ function validReply(value) {
   return value && typeof value.urgent === 'boolean' && typeof value.title === 'string' && value.title.trim() && value.title.length <= 150 && Array.isArray(value.steps) && value.steps.length >= 1 && value.steps.length <= 3 && value.steps.every(step => typeof step === 'string' && step.trim() && step.length <= 300) && typeof value.checkIn === 'string' && value.checkIn.trim() && value.checkIn.length <= 250;
 }
 
-async function coach(message, history) {
+async function coach(message, history, countryCode) {
   const local = !key && !ollamaKey;
   const cloud = !key && !!ollamaKey;
   const language = /[\u0600-\u06ff]/.test(message) ? 'Write title, every step, and checkIn entirely in Urdu script. Do not use English.' : isUrdu(message) ? 'Write title, every step, and checkIn in Roman Urdu.' : 'Write title, every step, and checkIn in English.';
@@ -58,18 +60,18 @@ async function coach(message, history) {
   const json = content.slice(content.indexOf('{'), content.lastIndexOf('}') + 1);
   const result = JSON.parse(json);
   if (!validReply(result)) throw new Error('Invalid model response');
-  return result.urgent ? urgentReply(message) : result;
+  return result.urgent ? urgentReply(message, countryCode) : result;
 }
 
-export async function answer(body) {
+export async function answer(body, countryCode) {
   const { message, history = [] } = body || {};
   if (typeof message !== 'string' || !message.trim() || message.length > 2000 || !Array.isArray(history) || history.length > 8 || history.some(item => !item || !['user', 'assistant'].includes(item.role) || typeof item.content !== 'string' || item.content.length > 2000)) {
     return { status: 400, payload: { error: 'Please enter a concern under 2,000 characters.' } };
   }
-  if (urgentConcern(message)) return { status: 200, payload: urgentReply(message) };
+  if (urgentConcern(message)) return { status: 200, payload: urgentReply(message, countryCode) };
   if (process.env.VERCEL && !key && !ollamaKey) return { status: 503, payload: { error: 'The coach is not configured. Set OLLAMA_API_KEY in Vercel.' } };
   try {
-    return { status: 200, payload: await coach(message.trim(), history) };
+    return { status: 200, payload: await coach(message.trim(), history, countryCode) };
   } catch {
     return { status: 502, payload: { error: key || ollamaKey ? 'The coach could not respond. Please try again.' : `Local coach unavailable. Start Ollama and pull ${localModel}, then try again.` } };
   }
@@ -91,7 +93,7 @@ export const server = createServer(async (request, response) => {
   };
   if (request.method === 'POST' && request.url === '/api/coach') {
     try {
-      const { status, payload } = await answer(await readBody(request));
+      const { status, payload } = await answer(await readBody(request), request.headers['x-vercel-ip-country']);
       return send(status, payload);
     } catch (error) {
       return send(error.message === 'Request too large' ? 413 : 400, { error: error.message === 'Request too large' ? error.message : 'Invalid JSON request.' });

@@ -55,6 +55,40 @@ function coachAvatar() {
   return avatar;
 }
 
+function addContacts(contacts, urdu) {
+  const section = element('section', 'local-help');
+  section.setAttribute('aria-label', urdu ? 'مقامی مدد کے نمبر' : 'Local help numbers');
+  section.dir = urdu ? 'rtl' : 'ltr';
+  if (contacts.police && contacts.childHelpline) {
+    section.append(element('h4', '', urdu ? `${contacts.country} کے لیے ممکنہ نمبر` : `Numbers for ${contacts.country} (approximate location)`));
+    const numbers = element('ol', 'local-numbers');
+    for (const [label, number] of [
+      [urdu ? 'پولیس / ایمرجنسی' : 'Police / emergency', contacts.police],
+      [urdu ? 'بچوں کی ہیلپ لائن' : 'Child helpline', contacts.childHelpline]
+    ]) {
+      const item = element('li');
+      const link = element('a', '', number);
+      link.href = `tel:${number.replace(/[^\d+]/g, '')}`;
+      const line = element('div', 'local-number-line');
+      line.append(element('span', '', label), link);
+      item.append(line);
+      numbers.append(item);
+    }
+    section.append(numbers);
+  } else {
+    const where = contacts.country ? ` ${contacts.country}` : '';
+    section.append(element('p', 'local-unavailable', urdu
+      ? `ہم${where} کے لیے تصدیق شدہ نمبر نہیں دکھا سکتے۔ مقامی پولیس اور بچوں کی ہیلپ لائن تلاش کریں۔`
+      : `We couldn't verify numbers for${where || ' your location'}. Search for local police and child helplines.`));
+  }
+  const search = element('a', 'local-search', urdu ? 'دوسرے ملک میں ہیں؟ مقامی نمبر تلاش کریں ↗' : 'Elsewhere? Search local numbers ↗');
+  search.href = contacts.searchUrl;
+  search.target = '_blank';
+  search.rel = 'noopener noreferrer';
+  section.append(search);
+  return section;
+}
+
 function addCoach(reply, pending) {
   const row = element('div', `message-row coach-row revealing${reply.urgent ? ' urgent' : ''}`);
   const card = element('div', 'reply-card');
@@ -72,7 +106,10 @@ function addCoach(reply, pending) {
   check.dataset.prompt = /[\u0600-\u06ff]/.test(reply.checkIn) ? 'تازہ صورتحال: ' : 'Here’s what happened: ';
   check.append(element('span', 'check-icon', '↗'), element('span', '', reply.checkIn));
   check.dir = 'auto';
-  card.append(label, title, list, check);
+  card.append(label, title);
+  if (reply.urgent && reply.contacts) card.append(addContacts(reply.contacts, /[\u0600-\u06ff]/.test(reply.title)));
+  card.append(list);
+  card.append(check);
   row.append(coachAvatar(), card);
   pending.replaceWith(row);
   scrollToLatest(row);

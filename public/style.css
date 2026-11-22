@@ -35,3 +35,8 @@
 @keyframes avatar-float{50%{transform:translateY(-2px)}}
 @keyframes avatar-halo{50%{opacity:.35;transform:scale(1.08)}}
 @media (prefers-reduced-motion:reduce){.coach-avatar,.coach-avatar::after{animation:none}}
+.status span{position:relative;vertical-align:middle;animation:status-breathe 2.4s ease-in-out infinite}
+.status span::after{content:"";position:absolute;inset:-4px;border:1px solid #51b787;border-radius:50%;animation:status-pulse 2.4s ease-out infinite}
+@keyframes status-breathe{50%{box-shadow:0 0 0 3px rgba(81,183,135,.16)}}
+@keyframes status-pulse{0%{opacity:.7;transform:scale(.65)}70%,100%{opacity:0;transform:scale(1.5)}}
+@media (prefers-reduced-motion:reduce){.status span,.status span::after{animation:none}}

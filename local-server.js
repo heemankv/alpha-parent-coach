@@ -5,8 +5,10 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('.', import.meta.url));
 const port = Number(process.env.PORT || 3000);
 const key = process.env.OPENAI_API_KEY;
+const ollamaKey = process.env.OLLAMA_API_KEY;
 const model = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
 const localModel = process.env.OLLAMA_MODEL || 'gemma3:4b';
+const cloudModel = process.env.OLLAMA_CLOUD_MODEL || 'gemma4:31b';
 
 export function urgentConcern(text) {
   return /\b(suicid(?:e|al)|self[- ]?harm|(?:want|wants|wanted) to die|kill (?:myself|himself|herself|themselves)|hurt (?:myself|himself|herself|themselves)|cutting (?:myself|himself|herself|themselves)|overdos(?:e|ed)|unconscious|not breathing|can't breathe|cannot breathe|choking|seizure|severe bleeding|poisoned|emergency|immediate danger|abus(?:e|ed|ing)|molest(?:ed|ation)|sexual assault|domestic violence|(?:hit|hits|hitting|beat|beating) (?:my|the|our) child)\b|خودکشی|خود کو نقصان|جان سے مار|سانس نہیں|بے ہوش|زیادتی|جنسی تشدد|بدسلوکی|تشدد|ایمرجنسی|حادثہ|maar dunga|khudkushi|khud ko nuqsan|saans nahi|behosh/i.test(text);
@@ -33,14 +35,15 @@ function validReply(value) {
 }
 
 async function coach(message, history) {
-  const local = !key;
+  const local = !key && !ollamaKey;
+  const cloud = !key && !!ollamaKey;
   const language = /[\u0600-\u06ff]/.test(message) ? 'Write title, every step, and checkIn entirely in Urdu script. Do not use English.' : isUrdu(message) ? 'Write title, every step, and checkIn in Roman Urdu.' : 'Write title, every step, and checkIn in English.';
-  const response = await fetch(local ? 'http://127.0.0.1:11434/api/chat' : 'https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(local ? 'http://127.0.0.1:11434/api/chat' : cloud ? 'https://ollama.com/api/chat' : 'https://api.openai.com/v1/chat/completions', {
     method: 'POST',
-    headers: local ? { 'Content-Type': 'application/json' } : { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(local ? 120000 : 20000),
+    headers: { 'Content-Type': 'application/json', ...(!local ? { Authorization: `Bearer ${cloud ? ollamaKey : key}` } : {}) },
+    signal: AbortSignal.timeout(local ? 120000 : 30000),
     body: JSON.stringify({
-      ...(local ? { model: localModel, stream: false, think: false, format: 'json', options: { temperature: 0.4, num_predict: 300 } } : { model, temperature: 0.4, max_completion_tokens: 300, response_format: { type: 'json_object' } }),
+      ...(local ? { model: localModel, stream: false, think: false, format: 'json', options: { temperature: 0.4, num_predict: 300 } } : cloud ? { model: cloudModel, stream: false, think: false } : { model, temperature: 0.4, max_completion_tokens: 300, response_format: { type: 'json_object' } }),
       messages: [
         { role: 'system', content: instructions },
         ...history.map(item => ({ role: item.role, content: item.content })),
@@ -51,9 +54,25 @@ async function coach(message, history) {
   });
   if (!response.ok) throw new Error(`Model request failed (${response.status})`);
   const data = await response.json();
-  const result = JSON.parse((local ? data.message?.content : data.choices?.[0]?.message?.content) || 'null');
+  const content = (local || cloud ? data.message?.content : data.choices?.[0]?.message?.content) || 'null';
+  const json = content.slice(content.indexOf('{'), content.lastIndexOf('}') + 1);
+  const result = JSON.parse(json);
   if (!validReply(result)) throw new Error('Invalid model response');
   return result.urgent ? urgentReply(message) : result;
+}
+
+export async function answer(body) {
+  const { message, history = [] } = body || {};
+  if (typeof message !== 'string' || !message.trim() || message.length > 2000 || !Array.isArray(history) || history.length > 8 || history.some(item => !item || !['user', 'assistant'].includes(item.role) || typeof item.content !== 'string' || item.content.length > 2000)) {
+    return { status: 400, payload: { error: 'Please enter a concern under 2,000 characters.' } };
+  }
+  if (urgentConcern(message)) return { status: 200, payload: urgentReply(message) };
+  if (process.env.VERCEL && !key && !ollamaKey) return { status: 503, payload: { error: 'The coach is not configured. Set OLLAMA_API_KEY in Vercel.' } };
+  try {
+    return { status: 200, payload: await coach(message.trim(), history) };
+  } catch {
+    return { status: 502, payload: { error: key || ollamaKey ? 'The coach could not respond. Please try again.' : `Local coach unavailable. Start Ollama and pull ${localModel}, then try again.` } };
+  }
 }
 
 async function readBody(request) {
@@ -72,14 +91,10 @@ export const server = createServer(async (request, response) => {
   };
   if (request.method === 'POST' && request.url === '/api/coach') {
     try {
-      const { message, history = [] } = await readBody(request);
-      if (typeof message !== 'string' || !message.trim() || message.length > 2000 || !Array.isArray(history) || history.length > 8 || history.some(item => !item || !['user', 'assistant'].includes(item.role) || typeof item.content !== 'string' || item.content.length > 2000)) {
-        return send(400, { error: 'Please enter a concern under 2,000 characters.' });
-      }
-      if (urgentConcern(message)) return send(200, urgentReply(message));
-      return send(200, await coach(message.trim(), history));
+      const { status, payload } = await answer(await readBody(request));
+      return send(status, payload);
     } catch (error) {
-      return send(error.message === 'Request too large' ? 413 : 502, { error: error.message === 'Request too large' ? error.message : key ? 'The coach could not respond. Please try again.' : `Local coach unavailable. Start Ollama and pull ${localModel}, then try again.` });
+      return send(error.message === 'Request too large' ? 413 : 400, { error: error.message === 'Request too large' ? error.message : 'Invalid JSON request.' });
     }
   }
   if (request.method !== 'GET') return send(405, { error: 'Method not allowed' });

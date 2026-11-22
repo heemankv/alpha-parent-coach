@@ -98,7 +98,7 @@ export const server = createServer(async (request, response) => {
     }
   }
   if (request.method !== 'GET') return send(405, { error: 'Method not allowed' });
-  const files = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/coach-avatar.jpg': ['coach-avatar.jpg', 'image/jpeg'] };
+  const files = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/coach-avatar.jpg': ['coach-avatar.jpg', 'image/jpeg'], '/sparkle.svg': ['sparkle.svg', 'image/svg+xml'] };
   const file = files[request.url];
   if (!file) return send(404, { error: 'Not found' });
   response.writeHead(200, { 'Content-Type': `${file[1]}; charset=utf-8`, 'Cache-Control': 'no-cache' });

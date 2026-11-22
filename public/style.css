@@ -47,3 +47,19 @@
 .check-in{width:100%;border-right:0;border-bottom:0;border-left:0;background:transparent;text-align:left;cursor:pointer;font-family:inherit}
 .check-in:hover{color:var(--red)}
 .check-in:focus-visible{outline:2px solid var(--red);outline-offset:4px;border-radius:3px}
+.conversation{display:flex;flex-direction:column;scroll-behavior:smooth;overflow-anchor:none}
+.conversation:not(:has(.welcome))>:first-child{margin-top:auto}
+.message-row{flex:none}
+.user-row{animation:message-rise .3s ease-out both}
+.pending-row{animation:message-rise .3s ease-out both}
+.typing-indicator{display:flex;align-items:center;min-width:67px;min-height:38px;padding:0 15px;background:#fff;border:1px solid #ece9e6;border-radius:4px 15px 15px 15px;box-shadow:0 5px 20px rgba(0,0,0,.035)}
+.typing-dots{display:flex;align-items:center;gap:5px}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:#a9adba;animation:typing-bounce 1.1s ease-in-out infinite}
+.typing-dots span:nth-child(2){animation-delay:.16s}
+.typing-dots span:nth-child(3){animation-delay:.32s}
+.revealing .reply-card,.revealing .reply-avatar{animation:message-rise .42s cubic-bezier(.2,.75,.25,1) both}
+.revealing .reply-avatar{animation-delay:.05s}
+@keyframes message-rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes typing-bounce{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-5px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.conversation{scroll-behavior:auto}.user-row,.pending-row,.revealing .reply-card,.revealing .reply-avatar,.typing-dots span{animation:none}}
+@media (max-width:560px){.reply-card{padding:14px}.reply-card h3{margin:8px 0 10px}.steps{margin-bottom:10px;line-height:1.45}.steps li{margin:6px 0}.check-in{padding-top:10px}}

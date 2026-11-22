@@ -5,6 +5,17 @@ const conversation = document.querySelector('#conversation');
 const clear = document.querySelector('#clear');
 const welcome = conversation.innerHTML;
 let history = [];
+let requestId = 0;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function scrollToLatest(focusRow) {
+  requestAnimationFrame(() => {
+    const top = focusRow && focusRow.offsetHeight > conversation.clientHeight - 24
+      ? conversation.scrollTop + focusRow.getBoundingClientRect().top - conversation.getBoundingClientRect().top - 12
+      : conversation.scrollHeight;
+    conversation.scrollTo({ top, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+  });
+}
 
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -19,16 +30,21 @@ function addUser(text) {
   bubble.dir = 'auto';
   row.append(bubble);
   conversation.append(row);
+  scrollToLatest();
 }
 
-function addCoach(reply) {
-  const row = element('div', `message-row coach-row${reply.urgent ? ' urgent' : ''}`);
+function coachAvatar() {
   const avatar = element('div', 'reply-avatar');
   avatar.setAttribute('aria-hidden', 'true');
   const photo = element('img');
   photo.src = '/coach-avatar.jpg';
   photo.alt = '';
   avatar.append(photo);
+  return avatar;
+}
+
+function addCoach(reply, pending) {
+  const row = element('div', `message-row coach-row revealing${reply.urgent ? ' urgent' : ''}`);
   const card = element('div', 'reply-card');
   const label = element('div', 'reply-label', reply.urgent ? 'SAFETY FIRST' : 'A SMALL PLAN');
   const title = element('h3', '', reply.title);
@@ -45,47 +61,61 @@ function addCoach(reply) {
   check.append(element('span', 'check-icon', '↗'), element('span', '', reply.checkIn));
   check.dir = 'auto';
   card.append(label, title, list, check);
-  row.append(avatar, card);
-  conversation.append(row);
-  conversation.scrollTop = conversation.scrollHeight;
+  row.append(coachAvatar(), card);
+  pending.replaceWith(row);
+  scrollToLatest(row);
 }
 
 function addError(text) {
   const error = element('p', 'error', text);
   error.setAttribute('role', 'alert');
   conversation.append(error);
-  conversation.scrollTop = conversation.scrollHeight;
+  scrollToLatest();
 }
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
   const message = input.value.trim();
   if (!message) return;
+  const currentRequest = ++requestId;
   document.querySelector('.welcome')?.remove();
   addUser(message);
   const userRow = conversation.lastElementChild;
   input.value = '';
   input.disabled = true;
   send.disabled = true;
-  const pending = element('div', 'pending', 'Putting together a small plan…');
+  const pending = element('div', 'message-row coach-row pending-row');
+  const typing = element('div', 'typing-indicator');
+  typing.setAttribute('role', 'status');
+  typing.append(element('span', 'sr-only', 'Alpha coach is thinking'));
+  const dots = element('span', 'typing-dots');
+  dots.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < 3; i++) dots.append(element('span'));
+  typing.append(dots);
+  pending.append(coachAvatar(), typing);
   conversation.append(pending);
-  conversation.scrollTop = conversation.scrollHeight;
+  scrollToLatest();
+  const startedAt = performance.now();
   try {
     const response = await fetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, history: history.slice(-8) }) });
     const reply = await response.json();
     if (!response.ok) throw new Error(reply.error || 'Something went wrong. Please try again.');
-    pending.remove();
-    addCoach(reply);
+    await new Promise(resolve => setTimeout(resolve, Math.max(0, 400 - (performance.now() - startedAt))));
+    if (currentRequest !== requestId) return;
+    addCoach(reply, pending);
     history.push({ role: 'user', content: message }, { role: 'assistant', content: `${reply.title}\n${reply.steps.join('\n')}\n${reply.checkIn}` });
   } catch (error) {
+    if (currentRequest !== requestId) return;
     pending.remove();
     addError(error.message);
     input.value = message;
     userRow.remove();
   } finally {
-    input.disabled = false;
-    send.disabled = false;
-    input.focus();
+    if (currentRequest === requestId) {
+      input.disabled = false;
+      send.disabled = false;
+      input.focus();
+    }
   }
 });
 
@@ -104,8 +134,11 @@ conversation.addEventListener('click', event => {
 });
 
 clear.addEventListener('click', () => {
+  requestId++;
   history = [];
   conversation.innerHTML = welcome;
   input.value = '';
+  input.disabled = false;
+  send.disabled = false;
   input.focus();
 });

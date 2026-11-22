@@ -2,6 +2,8 @@
 
 A small bilingual parenting coach prototype for English and Urdu concerns. Built with Node.js and a simple web UI.
 
+Live site: https://heemankv-aplha-kids.vercel.app/ (production deploys from `main`).
+
 ## Run
 
 1. Use Node.js 20 or newer.

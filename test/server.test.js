@@ -10,6 +10,7 @@ test('verified crisis contacts cover 55 countries and unknown countries use sear
   assert.deepEqual([crisisContacts('US').police, crisisContacts('US').childHelpline], ['911', '18004224453']);
   assert.deepEqual([crisisContacts('FR').police, crisisContacts('FR').childHelpline], ['112', '119']);
   assert.deepEqual([crisisContacts('CO').police, crisisContacts('CO').childHelpline], ['123', '141']);
+  assert.match(decodeURIComponent(crisisContacts('IN').searchUrl), /in my country/);
   const unknown = crisisContacts('MX');
   assert.equal(unknown.police, undefined);
   assert.equal(unknown.childHelpline, undefined);

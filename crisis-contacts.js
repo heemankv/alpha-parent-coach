@@ -75,7 +75,7 @@ export function crisisContacts(countryCode) {
   const known = contactsByCountry[code];
   const detected = known?.country || (/^[A-Z]{2}$/.test(code) ? new Intl.DisplayNames(['en'], { type: 'region' }).of(code) : null);
   const country = detected && detected !== code && detected !== 'Unknown Region' ? detected : null;
-  const search = country
+  const search = !known && country
     ? `child safety helpline and police emergency number in ${country}`
     : 'child safety helpline and police emergency number in my country';
   return { ...known, country, searchUrl: `https://www.google.com/search?q=${encodeURIComponent(search)}` };

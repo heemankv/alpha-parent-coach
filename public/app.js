@@ -81,7 +81,10 @@ function addContacts(contacts, urdu) {
       ? `ہم${where} کے لیے تصدیق شدہ نمبر نہیں دکھا سکتے۔ مقامی پولیس اور بچوں کی ہیلپ لائن تلاش کریں۔`
       : `We couldn't verify numbers for${where || ' your location'}. Search for local police and child helplines.`));
   }
-  const search = element('a', 'local-search', urdu ? 'دوسرے ملک میں ہیں؟ مقامی نمبر تلاش کریں ↗' : 'Elsewhere? Search local numbers ↗');
+  const hasNumbers = contacts.police && contacts.childHelpline;
+  const search = element('a', 'local-search', hasNumbers
+    ? (urdu ? 'دوسرے ملک میں ہیں؟ مقامی نمبر تلاش کریں ↗' : 'Elsewhere? Search local numbers ↗')
+    : (urdu ? 'گوگل پر مقامی نمبر تلاش کریں ↗' : 'Search Google for local numbers ↗'));
   search.href = contacts.searchUrl;
   search.target = '_blank';
   search.rel = 'noopener noreferrer';
